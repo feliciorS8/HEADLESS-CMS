@@ -1,0 +1,58 @@
+# Dependencies
+/node_modules/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Next.js build output and caches
+/.next/
+/out/
+/build/
+
+# Test and tool coverage
+/coverage/
+/playwright-report/
+/test-results/
+
+# Supabase local state and generated files
+/.supabase/
+/supabase/.temp/
+/supabase/.branches/
+
+# Deployment
+/.vercel/
+
+# Environment secrets (keep the public template)
+.env*
+!.env.example
+
+# Logs and crash reports
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.stackdump
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*.swo
+*~
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
