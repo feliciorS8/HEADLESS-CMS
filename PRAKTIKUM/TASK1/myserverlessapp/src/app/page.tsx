@@ -1,171 +1,393 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  CircleAlert,
+  Database,
+  FolderKanban,
+  Layers3,
+  ListTodo,
+  Wallet,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import type { Tables } from "@/types/database.types";
+import { createClient } from "@/utils/supabase/server";
 
-const architecture = [
-  { number: "01", name: "Application", detail: "Next.js 16" },
-  { number: "02", name: "Data", detail: "Supabase · PostgreSQL" },
-  { number: "03", name: "Media", detail: "Cloudinary CDN" },
-  { number: "04", name: "Delivery", detail: "Vercel Edge" },
+type ProjectWithTasks = Pick<
+  Tables<"projects">,
+  "id" | "title" | "description" | "budget"
+> & {
+  tasks: Pick<Tables<"tasks">, "id" | "title" | "status">[];
+};
+
+const schemaLayers = [
+  {
+    name: "profiles",
+    detail: "Identitas pengembang",
+    icon: Layers3,
+    tone: "text-primary",
+  },
+  {
+    name: "projects",
+    detail: "Proyek dan anggaran",
+    icon: FolderKanban,
+    tone: "text-sky-600 dark:text-sky-400",
+  },
+  {
+    name: "tasks",
+    detail: "Tugas dan progres",
+    icon: ListTodo,
+    tone: "text-emerald-600 dark:text-emerald-400",
+  },
 ];
 
-export default function Home() {
+export default async function HomePage() {
+  const supabaseConfigured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+  );
+  let projects: ProjectWithTasks[] = [];
+  let queryFailed = false;
+
+  if (supabaseConfigured) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("projects")
+      .select("id, title, description, budget, tasks(id, title, status)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Failed to load Supabase projects:", error);
+      queryFailed = true;
+    } else {
+      projects = data ?? [];
+    }
+  }
+
+  const taskCount = projects.reduce(
+    (total, project) => total + project.tasks.length,
+    0,
+  );
+  const totalBudget = projects.reduce(
+    (total, project) => total + (project.budget ?? 0),
+    0,
+  );
+
+  const metrics = [
+    {
+      label: "Proyek aktif",
+      value: projects.length.toString().padStart(2, "0"),
+      icon: FolderKanban,
+      detail: "Tercatat di workspace",
+    },
+    {
+      label: "Total tugas",
+      value: taskCount.toString().padStart(2, "0"),
+      icon: ListTodo,
+      detail: "Terhubung ke proyek",
+    },
+    {
+      label: "Total anggaran",
+      value: `Rp ${totalBudget.toLocaleString("id-ID")}`,
+      icon: Wallet,
+      detail: "Akumulasi seluruh proyek",
+    },
+  ];
+
   return (
-    <main className="bg-background text-foreground">
-      <section className="relative isolate min-h-[76svh] overflow-hidden bg-neutral-950 text-black">
-        <Image
-          src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=90"
-          alt="Jaringan data global membentang di atas bumi pada malam hari"
-          fill
-          priority
-          unoptimized
-          sizes="100vw"
-          className="-z-20 object-cover object-center"
-        />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-neutral-950/90 via-neutral-950/65 to-neutral-950/15" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-neutral-950/75 via-transparent to-neutral-950/20" />
+    <main className="min-h-screen bg-background text-foreground">
+      <section className="relative isolate overflow-hidden border-b border-border">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,var(--color-primary)_0%,transparent_42%)] opacity-[0.08]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_bottom_right,var(--color-chart-2)_0%,transparent_38%)] opacity-[0.08]" />
 
         <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-6 sm:px-8 lg:px-12">
-          <Link
-            href="/"
-            className="text-sm font-semibold tracking-normal text-white"
-          >
-            THE SERVERLESS ODYSSEY
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
+              <Database className="size-4" aria-hidden="true" />
+            </span>
+            <span className="text-sm font-semibold tracking-tight">
+              The Serverless Odyssey
+            </span>
           </Link>
-          <Link
-            href="/tasks"
-            className="text-sm text-white/75 transition-colors hover:text-white"
+          <Badge
+            variant={supabaseConfigured && !queryFailed ? "secondary" : "outline"}
+            className="gap-1.5 rounded-full px-3 py-1.5"
           >
-            Ruang tugas <span aria-hidden="true">↗</span>
-          </Link>
+            {supabaseConfigured && !queryFailed ? (
+              <CheckCircle2
+                className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                aria-hidden="true"
+              />
+            ) : (
+              <CircleAlert
+                className="size-3.5 text-amber-600 dark:text-amber-400"
+                aria-hidden="true"
+              />
+            )}
+            {supabaseConfigured && !queryFailed
+              ? "Supabase terhubung"
+              : "Supabase belum terverifikasi"}
+          </Badge>
         </header>
 
-        <div className="mx-auto grid min-h-[calc(76svh-76px)] w-full max-w-7xl items-center gap-12 px-5 pb-16 pt-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.72fr)] lg:px-12">
-          <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-medium text-white/90 shadow-lg shadow-black/10 backdrop-blur-md">
-              <span className="size-1.5 rounded-full bg-emerald-300" />
-              The Serverless Odyssey <span aria-hidden="true">&bull;</span>{" "}
-              Minggu 02
-            </span>
-            <h1 className="mt-7 max-w-3xl text-5xl leading-[0.98] font-semibold text-white sm:text-6xl lg:text-7xl">
-              The Serverless
+        <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 pb-16 pt-12 sm:px-8 md:pb-24 md:pt-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:px-12">
+          <div className="max-w-3xl">
+            <Badge
+              variant="outline"
+              className="rounded-full border-primary/20 bg-primary/5 px-3 py-1.5 text-primary"
+            >
+              Proyek Akhir · Serverless Architecture
+            </Badge>
+            <h1 className="mt-6 text-4xl leading-[1.05] font-semibold tracking-[-0.04em] sm:text-5xl lg:text-6xl">
+              Satu workspace.
               <br />
-              Odyssey
+              <span className="bg-gradient-to-r from-primary via-sky-600 to-emerald-600 bg-clip-text text-transparent dark:via-sky-400 dark:to-emerald-400">
+                Seluruh perjalanan.
+              </span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-white/75 sm:text-lg">
-              Merancang aplikasi modern dari database PostgreSQL terkelola,
-              pengiriman media global, hingga komputasi edge yang siap tumbuh.
+            <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+              Kelola proyek serverless dan pecah visi besar menjadi tugas yang
+              terukur. Didukung Next.js 16, PostgreSQL, dan Supabase.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/tasks"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-black shadow-xl shadow-black/15 transition-transform hover:-translate-y-0.5 hover:bg-white/90 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                Buka Form Pembuatan Tugas
-                <ArrowUpRight aria-hidden="true" />
+                Buka Dashboard Tugas
+                <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
-              <a
-                href="#architecture"
-                className="inline-flex items-center gap-2 rounded-full px-3 py-3 text-sm font-medium text-white/80 transition-colors hover:text-white"
-              >
-                Lihat arsitektur
-                <ArrowDown className="size-4" aria-hidden="true" />
-              </a>
-            </div>
-
-            <div className="mt-12 flex items-center gap-3 text-xs text-white/65">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-300/70" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-300" />
-              </span>
-              <span>Cloud-native by design</span>
-              <span className="text-white/35">/</span>
-              <span>Empat pilar, satu perjalanan</span>
+              <p className="text-sm text-muted-foreground">
+                Data proyek dimuat langsung dari Supabase.
+              </p>
             </div>
           </div>
 
-          <aside
-            aria-label="Pratinjau formulir pembuatan tugas"
-            className="relative mx-auto w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-1000 lg:justify-self-end"
-          >
-            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-primary/30 via-transparent to-cyan-400/20 blur-2xl" />
-            <div className="relative rounded-3xl border border-white/20 bg-card/95 p-5 text-card-foreground shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-7">
-              <div className="flex items-start justify-between gap-4">
+          <Card className="overflow-hidden border-border/80 bg-card/90 shadow-2xl shadow-primary/5 backdrop-blur">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    Task workspace
-                  </p>
-                  <h2 className="mt-2 text-xl font-semibold tracking-tight">
-                    Rencanakan langkah berikutnya
-                  </h2>
+                  <CardDescription className="font-mono text-xs uppercase tracking-[0.16em]">
+                    Data architecture
+                  </CardDescription>
+                  <CardTitle className="mt-2 text-xl tracking-tight">
+                    Relasi yang terstruktur
+                  </CardTitle>
                 </div>
-                <span className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-                  Form aktif
+                <span className="grid size-10 place-items-center rounded-xl border border-border bg-muted/60">
+                  <Database
+                    className="size-5 text-primary"
+                    aria-hidden="true"
+                  />
                 </span>
               </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {schemaLayers.map((layer, index) => {
+                  const Icon = layer.icon;
 
-              <div className="mt-7 space-y-5">
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Judul tugas
-                  </p>
-                  <div className="rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-muted-foreground shadow-sm">
-                    Implementasi modul berikutnya...
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Deskripsi
-                  </p>
-                  <div className="h-20 rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-muted-foreground shadow-sm">
-                    Tujuan, detail, dan capaian yang ingin diraih
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Prioritas
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">
-                    <span className="size-1.5 rounded-full bg-amber-500" />
-                    Sedang
-                  </span>
-                </div>
+                  return (
+                    <div key={layer.name}>
+                      <div className="flex items-center gap-3 rounded-xl border border-border bg-background/80 p-3.5 transition-colors hover:border-primary/30 hover:bg-accent/40">
+                        <span className="grid size-9 place-items-center rounded-lg bg-muted">
+                          <Icon
+                            className={`size-4 ${layer.tone}`}
+                            aria-hidden="true"
+                          />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-mono text-sm font-semibold">
+                            {layer.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {layer.detail}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-muted-foreground"
+                        >
+                          {index === 0
+                            ? "ROOT"
+                            : index === 1
+                              ? "1 : N"
+                              : "CHILD"}
+                        </Badge>
+                      </div>
+                      {index < schemaLayers.length - 1 && (
+                        <div className="ml-7 h-3 border-l border-dashed border-border" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-
-              <Link
-                href="/tasks"
-                className="mt-7 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                Buka Form Pembuatan Tugas
-                <ArrowUpRight className="size-4" aria-hidden="true" />
-              </Link>
-              <p className="mt-3 text-center text-xs text-muted-foreground">
-                Validasi instan · Prioritas terstruktur
+              <Separator className="my-5" />
+              <p className="text-xs leading-5 text-muted-foreground">
+                UUID keys · Foreign keys berantai · Validasi constraint
               </p>
-            </div>
-          </aside>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      <section
-        id="architecture"
-        className="border-b border-border bg-background"
-      >
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-x-8 gap-y-6 px-5 py-8 sm:px-8 md:grid-cols-4 lg:px-12">
-          {architecture.map((pillar) => (
-            <div key={pillar.number} className="flex items-start gap-3">
-              <span className="font-mono text-xs text-muted-foreground">
-                {pillar.number}
-              </span>
-              <div>
-                <p className="text-sm font-medium">{pillar.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {pillar.detail}
-                </p>
-              </div>
-            </div>
-          ))}
+      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 lg:px-12 lg:py-16">
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+              Workspace overview
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+              Ringkasan proyek
+            </h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Ringkasan terbaru dari database
+          </p>
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {metrics.map((metric) => {
+            const Icon = metric.icon;
+
+            return (
+              <Card
+                key={metric.label}
+                className="border-border/80 bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <CardContent className="flex items-start justify-between gap-4 p-5">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {metric.label}
+                    </p>
+                    <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">
+                      {metric.value}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {metric.detail}
+                    </p>
+                  </div>
+                  <span className="grid size-10 place-items-center rounded-xl border border-border bg-muted/60 text-primary">
+                    <Icon className="size-4" aria-hidden="true" />
+                  </span>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <div className="mb-5 mt-12 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              Proyek terbaru
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Proyek beserta progres tugas terkait.
+            </p>
+          </div>
+          <Badge variant="outline" className="shrink-0 rounded-full">
+            {projects.length} proyek
+          </Badge>
+        </div>
+
+        {!supabaseConfigured ? (
+          <div
+            role="status"
+            className="rounded-2xl border border-dashed border-border bg-card p-8 text-center"
+          >
+            <p className="font-medium">Supabase belum dikonfigurasi</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Tambahkan URL project dan publishable key di environment aplikasi
+              untuk memuat proyek.
+            </p>
+          </div>
+        ) : queryFailed ? (
+          <div
+            role="alert"
+            className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive"
+          >
+            Proyek gagal dimuat dari Supabase. Periksa koneksi dan izin akses
+            tabel.
+          </div>
+        ) : projects.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {projects.map((project) => (
+              <Card
+                key={project.id}
+                className="group border-border/80 bg-card transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <CardTitle className="text-base leading-6 tracking-tight">
+                      {project.title}
+                    </CardTitle>
+                    <Badge
+                      variant="secondary"
+                      className="shrink-0 transition-colors group-hover:bg-primary/10 group-hover:text-primary"
+                    >
+                      {project.tasks.length} tugas
+                    </Badge>
+                  </div>
+                  <CardDescription className="line-clamp-3 min-h-[3.75rem] leading-5">
+                    {project.description || "Belum ada deskripsi proyek."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Separator className="mb-4" />
+                  <div className="flex items-center justify-between gap-3 text-xs">
+                    <span className="text-muted-foreground">Anggaran</span>
+                    <span className="font-mono font-medium text-foreground">
+                      {project.budget === null
+                        ? "Belum ditentukan"
+                        : `Rp ${project.budget.toLocaleString("id-ID")}`}
+                    </span>
+                  </div>
+                  {project.tasks.length > 0 && (
+                    <ul className="mt-4 space-y-2 border-t border-border pt-4">
+                      {project.tasks.slice(0, 3).map((task) => (
+                        <li
+                          key={task.id}
+                          className="flex items-center justify-between gap-3 text-xs"
+                        >
+                          <span className="truncate text-muted-foreground">
+                            {task.title}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 rounded-full px-2 py-0 text-[10px] transition-colors hover:border-primary/30 hover:text-primary"
+                          >
+                            {task.status.replace("_", " ")}
+                          </Badge>
+                        </li>
+                      ))}
+                      {project.tasks.length > 3 && (
+                        <li className="text-xs text-muted-foreground">
+                          +{project.tasks.length - 3} tugas lainnya
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+            <p className="font-medium">Belum ada proyek</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Proyek yang tersedia di database akan ditampilkan di sini.
+            </p>
+          </div>
+        )}
       </section>
     </main>
   );

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import type { TaskStatus } from "@/lib/tasks";
+import type { TaskStatus } from "@/types/database.types";
 
 type TaskFilterValue = "all" | TaskStatus;
 
@@ -13,8 +13,9 @@ type TaskStatusFilterProps = {
 
 const filters: { value: TaskFilterValue; label: string }[] = [
   { value: "all", label: "Semua" },
-  { value: "in-progress", label: "Berjalan" },
-  { value: "completed", label: "Selesai" },
+  { value: "todo", label: "Belum mulai" },
+  { value: "in_progress", label: "Berjalan" },
+  { value: "done", label: "Selesai" },
 ];
 
 export function TaskStatusFilter({

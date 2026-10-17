@@ -9,7 +9,8 @@ import { CreateTaskForm } from "@/components/tasks/create-task-form";
 import { TaskStatusFilter } from "@/components/task-status-filter";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { tasks, type TaskStatus } from "@/lib/tasks";
+import type { TaskStatus } from "@/types/database.types";
+import { createClient } from "@/utils/supabase/server";
 
 type TaskFilterValue = "all" | TaskStatus;
 
@@ -28,32 +29,48 @@ type Metric = {
 };
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
+  const supabase = await createClient();
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select(
+      "id, title, description, status, project_id, created_at, updated_at, projects(title)",
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to load Supabase tasks:", error);
+  }
+
+  const taskRows = tasks ?? [];
   const query = await searchParams;
   const requestedStatus = Array.isArray(query.status)
     ? query.status[0]
     : query.status;
   const activeFilter: TaskFilterValue =
-    requestedStatus === "in-progress" || requestedStatus === "completed"
+    requestedStatus === "todo" ||
+    requestedStatus === "in_progress" ||
+    requestedStatus === "done"
       ? requestedStatus
       : "all";
-  const completedCount = tasks.filter(
-    (task) => task.status === "completed",
+  const completedCount = taskRows.filter((task) => task.status === "done")
+    .length;
+  const inProgressCount = taskRows.filter(
+    (task) => task.status === "in_progress",
   ).length;
-  const inProgressCount = tasks.filter(
-    (task) => task.status === "in-progress",
-  ).length;
-  const totalCount = tasks.length;
+  const todoCount = taskRows.filter((task) => task.status === "todo").length;
+  const totalCount = taskRows.length;
   const rateFor = (value: number) =>
     totalCount ? Math.round((value / totalCount) * 100) : 0;
   const counts: Record<TaskFilterValue, number> = {
     all: totalCount,
-    "in-progress": inProgressCount,
-    completed: completedCount,
+    todo: todoCount,
+    in_progress: inProgressCount,
+    done: completedCount,
   };
   const visibleTasks =
     activeFilter === "all"
-      ? tasks
-      : tasks.filter((task) => task.status === activeFilter);
+      ? taskRows
+      : taskRows.filter((task) => task.status === activeFilter);
 
   const metrics: Metric[] = [
     {
@@ -114,6 +131,16 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           </p>
         </div>
       </section>
+
+      {error && (
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+        >
+          Tugas tidak dapat dimuat dari Supabase. Periksa koneksi dan kebijakan
+          akses database.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
@@ -190,37 +217,39 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                       <CardHeader className="gap-4 p-5 pb-3">
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
-                            <p className="text-[11px] font-semibold text-muted-foreground">
-                              {task.category}
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              {task.projects?.title ?? "Tanpa proyek"}
                             </p>
                             <CardTitle className="mt-2 text-base leading-6 font-semibold">
                               {task.title}
                             </CardTitle>
                           </div>
                           <Badge
-                            variant={
-                              task.status === "completed"
-                                ? "default"
-                                : "secondary"
-                            }
+                            variant={task.status === "done" ? "default" : "secondary"}
                             className="shrink-0"
                           >
-                            {task.status === "completed"
+                            {task.status === "done"
                               ? "Selesai"
-                              : "Berjalan"}
+                              : task.status === "in_progress"
+                                ? "Berjalan"
+                                : "Belum mulai"}
                           </Badge>
                         </div>
                       </CardHeader>
                       <CardContent className="px-5 pb-5">
                         <p className="line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">
-                          {task.description}
+                          {task.description ?? "Belum ada deskripsi untuk tugas ini."}
                         </p>
                         <div className="mt-5 flex items-center justify-between gap-3 text-xs">
-                          <span className="font-medium text-foreground">
-                            +{task.xp} XP
-                          </span>
                           <span className="text-muted-foreground">
-                            {task.updatedLabel}
+                            Dibuat{" "}
+                            {new Date(task.created_at).toLocaleDateString(
+                              "id-ID",
+                              { day: "numeric", month: "short", year: "numeric" },
+                            )}
+                          </span>
+                          <span className="font-medium text-foreground">
+                            {task.status.replace("_", " ")}
                           </span>
                         </div>
                         <div
@@ -228,12 +257,26 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                           aria-label={`Progress ${task.title}`}
                           aria-valuemin={0}
                           aria-valuemax={100}
-                          aria-valuenow={task.progress}
+                          aria-valuenow={
+                            task.status === "done"
+                              ? 100
+                              : task.status === "in_progress"
+                                ? 50
+                                : 0
+                          }
                           className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"
                         >
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 transition-[width] duration-700"
-                            style={{ width: `${task.progress}%` }}
+                            style={{
+                              width: `${
+                                task.status === "done"
+                                  ? 100
+                                  : task.status === "in_progress"
+                                    ? 50
+                                    : 0
+                              }%`,
+                            }}
                           />
                         </div>
                       </CardContent>
