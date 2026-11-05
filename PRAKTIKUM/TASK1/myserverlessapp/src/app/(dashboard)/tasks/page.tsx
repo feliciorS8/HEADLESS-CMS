@@ -8,11 +8,15 @@ import {
   Clock,
   Circle,
   AlertCircle,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { TaskForm } from "@/components/tasks/task-form";
 import { TaskSearchInput } from "@/components/tasks/task-search-input";
+import { AnimatedFilterTabs } from "@/components/tasks/animated-filter-tabs";
 import { deleteTaskAction, toggleTaskStatusAction } from "@/actions/tasks";
+import { logoutAction } from "@/actions/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +33,7 @@ type TasksPageProps = {
   searchParams: Promise<{
     search?: string;
     page?: string;
+    status?: string;
   }>;
 };
 
@@ -40,7 +45,7 @@ type TaskWithProject = Tables<"tasks"> & {
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
   // Next.js 16: searchParams bertipe Promise, wajib di-await
-  const { search, page = "1" } = await searchParams;
+  const { search, page = "1", status = "all" } = await searchParams;
 
   const supabase = await createClient();
 
@@ -81,6 +86,13 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     query = query.ilike("title", `%${search.trim()}%`);
   }
 
+  // Filter status tugas
+  if (status === "in_progress") {
+    query = query.in("status", ["in_progress", "pending", "todo"]);
+  } else if (status === "completed") {
+    query = query.in("status", ["completed", "done"]);
+  }
+
   // Eksekusi kueri dengan pengurutan terbaru dan range pagination
   const { data, count, error } = await query
     .order("created_at", { ascending: false })
@@ -106,6 +118,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     const params = new URLSearchParams();
     if (search && search.trim()) {
       params.set("search", search.trim());
+    }
+    if (status && status !== "all") {
+      params.set("status", status);
     }
     params.set("page", String(pageNum));
     return `/tasks?${params.toString()}`;
@@ -139,6 +154,29 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
               <FlaskConical className="size-3.5 text-primary" />
               <span>/tasks/api-tester</span>
             </Link>
+
+            {user ? (
+              <form action={logoutAction}>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="xs"
+                  className="gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                  title={`Masuk sebagai ${user.email ?? "Pengguna"}`}
+                >
+                  <LogOut className="size-3.5" />
+                  <span>Keluar</span>
+                </Button>
+              </form>
+            ) : (
+              <Link
+                href="/login?next=/tasks"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+              >
+                <LogIn className="size-3.5" />
+                <span>Masuk Akun</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -155,6 +193,11 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             Total Tugas:{" "}
             <span className="font-semibold text-foreground">{totalCount}</span>
           </div>
+        </div>
+
+        {/* Tab Filter Status Beranimasi (Framer Motion layoutId activeFilterPill) */}
+        <div className="flex items-center justify-between pt-1">
+          <AnimatedFilterTabs currentStatus={status} />
         </div>
       </section>
 

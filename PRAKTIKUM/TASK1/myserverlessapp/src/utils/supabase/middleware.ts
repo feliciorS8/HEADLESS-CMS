@@ -53,10 +53,10 @@ export async function updateSession(
 
   const { pathname, search } = request.nextUrl;
 
-  // Protected routes check: /dashboard, /tasks, and /analytics
+  // Protected routes check: /dashboard dan /analytics
+  // Catatan: /tasks dapat diakses publik agar dashboard tugas dapat langsung diuji
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/tasks") ||
     pathname.startsWith("/analytics");
 
   // Auth routes check: /login

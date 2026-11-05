@@ -8,7 +8,6 @@ import {
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/utils/supabase/server";
+import { LoginForm } from "@/components/auth/login-form";
 
 interface LoginPageProps {
   searchParams: Promise<{ next?: string }>;
@@ -184,17 +184,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </ul>
             </div>
 
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3.5 text-xs text-muted-foreground">
-              <div className="mb-1 flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400">
-                <Sparkles className="size-3.5" />
-                <span>Petunjuk Menuju Tahap 2:</span>
-              </div>
-              <p>
-                Kompilasi dan fondasi redirect proxy berjalan normal. Pada{" "}
-                <strong>Tahap 2</strong>, komponen kartu sementara ini akan
-                diperkaya dengan formulir interaktif Login & Registrasi (Email &
-                Sandi) menggunakan Server Actions.
-              </p>
+            {/* Formulir Autentikasi Interaktif (Login & Registrasi) */}
+            <div className="rounded-xl border border-border/80 bg-background/50 p-4">
+              <LoginForm next={next && next.startsWith("/") ? next : "/tasks"} />
             </div>
           </CardContent>
 
