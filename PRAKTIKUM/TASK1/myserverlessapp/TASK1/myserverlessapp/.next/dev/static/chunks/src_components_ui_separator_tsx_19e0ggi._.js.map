@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///D:/SEM%205/HEADLESSCMS/PRAKTIKUM/TASK1/myserverlessapp/src/components/ui/separator.tsx"],"sourcesContent":["\"use client\"\r\n\r\nimport { Separator as SeparatorPrimitive } from \"@base-ui/react/separator\"\r\nimport { cn } from \"cn\"\r\n\r\nfunction Separator({\r\n  className,\r\n  orientation = \"horizontal\",\r\n  ...props\r\n}: SeparatorPrimitive.Props) {\r\n  return (\r\n    <SeparatorPrimitive\r\n      data-slot=\"separator\"\r\n      orientation={orientation}\r\n      className={cn(\r\n        \"shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch\",\r\n        className\r\n      )}\r\n      {...props}\r\n    />\r\n  )\r\n}\r\n\r\nexport { Separator }\r\n"],"names":["Separator","className","orientation","props"],"mappings":";;;;;AAEA;AACA;AAHA;;;;AAKA,SAASA,UAAU,EACjBC,SAAS,EACTC,cAAc,YAAY,EAC1B,GAAGC,OACsB;IACzB,qBACE,6LAAC,gLAAkB;QACjB,aAAU;QACVD,aAAaA;QACbD,WAAW,IAAA,4JAAE,EACX,gHACAA;QAED,GAAGE,KAAK;;;;;;AAGf;KAhBSH"}}]
+}

@@ -6,19 +6,19 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL DEFAULT 'Explorer',
   avatar_url TEXT DEFAULT '',
-  role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'lecturer', 'admin')),
+  role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
--- Pastikan kolom role dan foreign key auth.users tersedia jika tabel sudah ada dari migrasi sebelumnya
+-- Pastikan kolom role tersedia jika tabel sudah ada dari migrasi sebelumnya
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'role'
   ) THEN
-    ALTER TABLE public.profiles ADD COLUMN role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'lecturer', 'admin'));
+    ALTER TABLE public.profiles ADD COLUMN role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member'));
   END IF;
 END $$;
 
@@ -50,7 +50,7 @@ BEGIN
     new.id,
     COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', 'Explorer'),
     COALESCE(new.raw_user_meta_data->>'avatar_url', ''),
-    COALESCE(new.raw_user_meta_data->>'role', 'student')
+    COALESCE(new.raw_user_meta_data->>'role', 'member')
   )
   ON CONFLICT (id) DO UPDATE SET
     full_name = EXCLUDED.full_name,

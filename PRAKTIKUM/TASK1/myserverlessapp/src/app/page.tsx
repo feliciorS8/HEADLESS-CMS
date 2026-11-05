@@ -4,9 +4,11 @@ import {
   CheckCircle2,
   CircleAlert,
   Database,
+  FlaskConical,
   FolderKanban,
   Layers3,
   ListTodo,
+  Smartphone,
   Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -169,10 +171,23 @@ export default async function HomePage() {
                 Buka Dashboard Tugas
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
-              <p className="text-sm text-muted-foreground">
-                Data proyek dimuat langsung dari Supabase.
-              </p>
+              <Link
+                href="/tasks/api-tester"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <FlaskConical className="size-4 text-primary" aria-hidden="true" />
+                Mobile REST Playground
+              </Link>
             </div>
+            <p className="mt-3.5 flex items-center gap-2 text-xs text-muted-foreground">
+              <Smartphone className="size-3.5 text-primary" />
+              <span>
+                Universal REST API siap digunakan di{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground font-semibold">
+                  /api/v1/tasks
+                </code>
+              </span>
+            </p>
           </div>
 
           <Card className="overflow-hidden border-border/80 bg-card/90 shadow-2xl shadow-primary/5 backdrop-blur">

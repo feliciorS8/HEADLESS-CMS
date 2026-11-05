@@ -298,18 +298,32 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
                         {/* Kolom Aksi Hapus */}
                         <TableCell className="text-right">
-                          <form action={handleDeleteTask.bind(null, task.id)}>
+                          {userRole === "admin" || (user?.id && task.user_id === user.id) ? (
+                            <form action={handleDeleteTask.bind(null, task.id)}>
+                              <Button
+                                type="submit"
+                                variant="ghost"
+                                size="xs"
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 w-8 p-0 cursor-pointer"
+                                title={userRole === "admin" ? "Hapus tugas (Otoritas Admin)" : "Hapus tugas milik saya"}
+                              >
+                                <Trash2 className="size-4" />
+                                <span className="sr-only">Hapus tugas</span>
+                              </Button>
+                            </form>
+                          ) : (
                             <Button
-                              type="submit"
+                              type="button"
                               variant="ghost"
                               size="xs"
-                              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 w-8 p-0 cursor-pointer"
-                              title="Hapus tugas"
+                              disabled
+                              className="text-muted-foreground/30 h-8 w-8 p-0 cursor-not-allowed"
+                              title="Hanya Admin atau pemilik yang dapat menghapus tugas ini"
                             >
                               <Trash2 className="size-4" />
-                              <span className="sr-only">Hapus tugas</span>
+                              <span className="sr-only">Tidak berhak menghapus</span>
                             </Button>
-                          </form>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
