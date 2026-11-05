@@ -1,4 +1,11 @@
-export type TaskStatus = "todo" | "in_progress" | "done";
+export type TaskStatus =
+  | "todo"
+  | "in_progress"
+  | "done"
+  | "pending"
+  | "completed";
+
+export type TaskPriority = "low" | "medium" | "high";
 
 export type Database = {
   __InternalSupabase: {
@@ -11,13 +18,15 @@ export type Database = {
           id: string;
           full_name: string;
           avatar_url: string | null;
+          role: "admin" | "member" | "student" | "lecturer" | string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          full_name: string;
+          full_name?: string;
           avatar_url?: string | null;
+          role?: "admin" | "member" | "student" | "lecturer" | string;
           created_at?: string;
           updated_at?: string;
         };
@@ -25,6 +34,7 @@ export type Database = {
           id?: string;
           full_name?: string;
           avatar_url?: string | null;
+          role?: "admin" | "member" | "student" | "lecturer" | string;
           created_at?: string;
           updated_at?: string;
         };
@@ -72,8 +82,10 @@ export type Database = {
         Row: {
           id: string;
           project_id: string;
+          user_id?: string | null;
           title: string;
           description: string | null;
+          priority?: TaskPriority | string;
           status: TaskStatus;
           created_at: string;
           updated_at: string;
@@ -81,8 +93,10 @@ export type Database = {
         Insert: {
           id?: string;
           project_id: string;
+          user_id?: string | null;
           title: string;
           description?: string | null;
+          priority?: TaskPriority | string;
           status?: TaskStatus;
           created_at?: string;
           updated_at?: string;
@@ -90,8 +104,10 @@ export type Database = {
         Update: {
           id?: string;
           project_id?: string;
+          user_id?: string | null;
           title?: string;
           description?: string | null;
+          priority?: TaskPriority | string;
           status?: TaskStatus;
           created_at?: string;
           updated_at?: string;

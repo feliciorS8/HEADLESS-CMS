@@ -66,7 +66,10 @@ export default async function HomePage() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Failed to load Supabase projects:", error);
+      console.error(
+        "Failed to load Supabase projects:",
+        error.message || error.details || error,
+      );
       queryFailed = true;
     } else {
       projects = data ?? [];

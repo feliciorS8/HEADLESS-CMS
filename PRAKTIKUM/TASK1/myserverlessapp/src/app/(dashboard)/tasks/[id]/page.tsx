@@ -5,11 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/utils/supabase/server";
 
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   todo: "Belum mulai",
   in_progress: "Berjalan",
   done: "Selesai",
-} as const;
+  pending: "Belum mulai",
+  completed: "Selesai",
+};
 
 export default async function TaskDetailPage({
   params,
@@ -39,7 +41,11 @@ export default async function TaskDetailPage({
   if (!task) notFound();
 
   const progress =
-    task.status === "done" ? 100 : task.status === "in_progress" ? 50 : 0;
+    task.status === "done" || task.status === "completed"
+      ? 100
+      : task.status === "in_progress"
+      ? 50
+      : 0;
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -57,8 +63,14 @@ export default async function TaskDetailPage({
             <Badge variant="outline">
               {task.projects?.title ?? "Tanpa proyek"}
             </Badge>
-            <Badge variant={task.status === "done" ? "default" : "secondary"}>
-              {statusLabels[task.status]}
+            <Badge
+              variant={
+                task.status === "done" || task.status === "completed"
+                  ? "default"
+                  : "secondary"
+              }
+            >
+              {statusLabels[task.status] || task.status}
             </Badge>
           </div>
           <div>
@@ -78,7 +90,7 @@ export default async function TaskDetailPage({
             <div>
               <p className="text-xs text-muted-foreground">Status</p>
               <p className="mt-1 text-lg font-semibold">
-                {statusLabels[task.status]}
+                {statusLabels[task.status] || task.status}
               </p>
             </div>
             <div>
